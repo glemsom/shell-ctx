@@ -1,0 +1,101 @@
+#!/bin/bash
+
+set -eou pipefail
+
+if [[ "$(basename "$0")" == kubectl-* ]]; then # we are invoked as plugin
+	SELF="kubectl shell-ctx"
+else
+	SELF="shell-ctx"
+fi
+# Test for requirements
+REQUIREMENTS="awk sed fzf kubectl"
+for REQUIREMENT in $REQUIREMENTS; do
+	command -v $REQUIREMENT 1>/dev/null || {
+		echo "Warning, requirement missing: $REQUIREMENT"
+		exit 1
+	}
+done
+
+usage() {
+	cat <<-EOF
+	Usage:
+  $SELF                       : Select new context
+  $SELF hook <SHELL>          : Hook for <SHELL>
+  $SELF -h,--help             : Show this message
+
+	Setup:
+  $(do_help_hook)
+	EOF
+}
+do_help_hook() {
+	cat <<-EOF
+	Setup is required for $SELF to function correctly.
+
+	For BASH, append the following to your ~/.bashrc
+	  eval "\$($SELF hook bash)"
+	
+	For ZSH, append the following to your ~/.zshrc
+	  eval "\$($SELF hook zsh)"
+
+	For FISH, append the following to your ~/.config/fish/config.fish
+	  $SELF hook fish | source
+	EOF
+}
+do_hook() {
+	# Setup tmp KUBECONFIG for this shell
+	local ORIG_KUBECONFIG="$KUBECONFIG"
+	local TMP_KUBECONFIG=$(mktemp -q /tmp/kubectl-shell-ctx.XXXXXX || exit 1)
+
+	# Write current context to new temp context
+	local NEW_KUBECONFIG_CONTENT=$($KUBECTL config view --raw)
+	
+	# Create new kubeconfig for this shell
+	echo "$NEW_KUBECONFIG_CONTENT" > "$TMP_KUBECONFIG"
+	chmod 600 "$TMP_KUBECONFIG"
+	
+	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
+		echo "export KUBECONFIG=$TMP_KUBECONFIG"
+		echo "export KUBECTL_SHELL_CTX_HOOK=$1"
+		echo "trap \"rm -f -- $TMP_KUBECONFIG\" EXIT"
+	elif [[ "$1" == "fish" ]]; then
+		echo "set -x KUBECONFIG $TMP_KUBECONFIG"
+		echo "set -x KUBECTL_SHELL_CTX_HOOK $1"
+		echo "trap \"rm -f -- $TMP_KUBECONFIG\" EXIT"
+	else
+		echo "Unknown shell $1" >&2
+		exit 1
+	fi
+}
+
+main() {
+	if [[ -z "${KUBECTL:-}" ]]; then
+		if hash kubectl 2>/dev/null; then
+			KUBECTL=kubectl
+		elif hash kubectl.exe 2>/dev/null; then
+			KUBECTL=kubectl.exe
+		else
+			echo "Error, kubectl is not found" >&2
+			exit 1
+		fi
+	fi
+
+	if [[ "$#" -eq 2 ]] && [[ "$1" == 'hook' ]]; then
+		do_hook "$2"
+	elif [[ "$#" -eq 0 ]]; then
+		# Check we have the hook setup
+		if [[ -z "${KUBECTL_SHELL_CTX_HOOK:-}" ]]; then
+			do_help_hook
+		else
+			SELECTED_CTX=$($KUBECTL config get-contexts --no-headers=true | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort | awk '{print $1'})
+			$KUBECTL config use-context $SELECTED_CTX
+		fi
+	elif [[ "$#" -eq 1 ]] && [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+		usage
+	else
+		echo "Error, unknown commandline arguments"
+		usage
+		exit 1
+	fi
+}
+
+main $@
