@@ -31,6 +31,8 @@ do_help_hook() {
 	cat <<-EOF
 	Setup is required for $SELF to function correctly.
 
+	IMPORTANT: The shell hooks needs to be loaded after your KUBECONFIG variable!
+
 	For BASH, append the following to your ~/.bashrc
 	  eval "\$($SELF hook bash)"
 	
