@@ -8,6 +8,10 @@ Bash, Zsh and Fish
 
 
 ## Installation
+### Krew
+`kubectl krew install shell-ctx`
+
+### Manual
 `sudo curl https://raw.githubusercontent.com/glemsom/shell-ctx/main/kubectl-shell_ctx -o /usr/local/bin/kubectl-shell_ctx`  
 `sudo chmod +x /usr/local/bin/kubectl-shell_ctx`
 
