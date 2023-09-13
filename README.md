@@ -15,6 +15,13 @@ Bash, Zsh and Fish
 `sudo curl https://raw.githubusercontent.com/glemsom/shell-ctx/main/kubectl-shell_ctx -o /usr/local/bin/kubectl-shell_ctx`  
 `sudo chmod +x /usr/local/bin/kubectl-shell_ctx`
 
+## Dependencies
+For this plugin to operate the following dependencies are required:
+ - awk
+ - sed
+ - fzf
+ - kubectl
+
 ## Setup
 **The shell hooks needs to be loaded after your `KUBECONFIG` variable**  
 
