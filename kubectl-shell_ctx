@@ -11,7 +11,7 @@ fi
 REQUIREMENTS="awk sed fzf kubectl"
 for REQUIREMENT in $REQUIREMENTS; do
 	command -v $REQUIREMENT 1>/dev/null || {
-		echo "Warning, requirement missing: $REQUIREMENT"
+		echo "Warning, requirement missing: $REQUIREMENT" 1>&2
 		exit 1
 	}
 done
