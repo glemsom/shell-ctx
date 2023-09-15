@@ -1,6 +1,6 @@
 #!/bin/bash
 # Kubernetes shell independent context switching
-# Version: 1.0.3
+# Version: 1.0.4
 
 set -eou pipefail
 
@@ -9,14 +9,11 @@ if [[ "$(basename "$0")" == kubectl-* ]]; then # we are invoked as plugin
 else
 	SELF="shell-ctx"
 fi
-# Test for requirements
-REQUIREMENTS="awk sed fzf kubectl"
-for REQUIREMENT in $REQUIREMENTS; do
-	command -v $REQUIREMENT 1>/dev/null || {
-		echo "Warning, requirement missing: $REQUIREMENT" 1>&2
-		exit 1
-	}
-done
+
+err() {
+	echo "Error, $@" 1>&2
+	exit 1
+}
 
 usage() {
 	cat <<-EOF
@@ -29,24 +26,38 @@ usage() {
   $(do_help_hook)
 	EOF
 }
+
 do_help_hook() {
 	cat <<-EOF
 	Setup is required for $SELF to function correctly.
 
-	IMPORTANT: The shell hooks needs to be loaded after your KUBECONFIG variable!
+	#################################################################################
+	# IMPORTANT: The shell hooks needs to be loaded after your KUBECONFIG variable! #
+	#################################################################################
 
-	For BASH, append the following to your ~/.bashrc
-	  eval "\$($SELF hook bash)"
+	BASH: append the following to your ~/.bashrc:
+
+	    eval "\$($SELF hook bash)"
+
 	
-	For ZSH, append the following to your ~/.zshrc
+	ZSH: append the following to your ~/.zshrc:
+
 	  eval "\$($SELF hook zsh)"
 
-	For FISH, append the following to your ~/.config/fish/config.fish
+
+	FISH: append the following to your ~/.config/fish/config.fish:
+
 	  $SELF hook fish | source
+
 	EOF
 }
+
 do_hook() {
 	# Setup tmp KUBECONFIG for this shell
+
+	if [ -z ${KUBECONFIG+x} ]; then
+		err "KUBECONFIG variable is not set - cannot load $1 shell-hook"
+	fi
 	local ORIG_KUBECONFIG="$KUBECONFIG"
 	local TMP_KUBECONFIG=$(mktemp -q /tmp/kubectl-shell-ctx.XXXXXX || exit 1)
 
@@ -90,6 +101,7 @@ main() {
 		if [[ -z "${KUBECTL_SHELL_CTX_HOOK:-}" ]]; then
 			do_help_hook
 		else
+			checkRequirements
 			SELECTED_CTX=$($KUBECTL config get-contexts --no-headers=true | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort | awk '{print $1'})
 			$KUBECTL config use-context $SELECTED_CTX
 		fi
@@ -100,6 +112,16 @@ main() {
 		usage
 		exit 1
 	fi
+}
+
+checkRequirements() {
+	# Test for requirements
+	REQUIREMENTS="awk sed fzf kubectl"
+	for REQUIREMENT in $REQUIREMENTS; do
+		command -v $REQUIREMENT 1>/dev/null || {
+			err "requirement missing: $REQUIREMENT"
+		}
+	done
 }
 
 main $@
