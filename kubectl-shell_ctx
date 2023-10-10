@@ -1,6 +1,6 @@
 #!/bin/bash
 # Kubernetes shell independent context switching
-# Version: 1.0.4
+# Version: 1.0.5
 
 set -eou pipefail
 
@@ -19,6 +19,7 @@ usage() {
 	cat <<-EOF
 	Usage:
   $SELF                       : Select new context
+  $SELF clone                 : Clone context from another shell
   $SELF hook <SHELL>          : Hook for <SHELL>
   $SELF -h,--help             : Show this message
 
@@ -42,12 +43,13 @@ do_help_hook() {
 	
 	ZSH: append the following to your ~/.zshrc:
 
-	  eval "\$($SELF hook zsh)"
+	    eval "\$($SELF hook zsh)"
 
 
 	FISH: append the following to your ~/.config/fish/config.fish:
 
-	  $SELF hook fish | source
+	    $SELF hook fish | source
+
 
 	EOF
 }
@@ -82,6 +84,17 @@ do_hook() {
 	fi
 }
 
+do_clone() {
+	# Find other shell-ctx instances
+	SHELL_CTXS=$(find /tmp/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)")
+	for SHELL_CTX in $SHELL_CTXS; do
+    local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
+		TMP_CTX+="$SHELL_CTX    $TMP_CTX_CONTEXT\n"
+	done
+  SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
+  cp -rp "$SELECTED_CTX" "$KUBECONFIG"
+}
+
 main() {
 	if [[ -z "${KUBECTL:-}" ]]; then
 		if hash kubectl 2>/dev/null; then
@@ -105,6 +118,9 @@ main() {
 			SELECTED_CTX=$($KUBECTL config get-contexts --no-headers=true | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort | awk '{print $1'})
 			$KUBECTL config use-context $SELECTED_CTX
 		fi
+	elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
+    checkRequirements
+		do_clone
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
 		usage
 	else
@@ -116,7 +132,7 @@ main() {
 
 checkRequirements() {
 	# Test for requirements
-	REQUIREMENTS="awk sed fzf kubectl"
+	REQUIREMENTS="mktemp awk sed fzf kubectl"
 	for REQUIREMENT in $REQUIREMENTS; do
 		command -v $REQUIREMENT 1>/dev/null || {
 			err "requirement missing: $REQUIREMENT"
