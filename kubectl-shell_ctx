@@ -86,6 +86,7 @@ do_hook() {
 do_clone() {
 	# Find other shell-ctx instances
 	SHELL_CTXS=$(find /tmp/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)")
+	[[ -z "$SHELL_CTXS" ]] && err "no other shell-ctx instances found"
 	for SHELL_CTX in $SHELL_CTXS; do
     local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
 		TMP_CTX+="$SHELL_CTX    $TMP_CTX_CONTEXT\n"
