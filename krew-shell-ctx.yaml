@@ -3,12 +3,15 @@ kind: Plugin
 metadata:
   name: shell-ctx
 spec:
-  version: "v1.0.2"
+  version: "v1.0.5"
   homepage: https://github.com/glemsom/shell-ctx
-  shortDescription: "Kubernetes shell isolated context switcher"
+  shortDescription: "Shell independent context switching"
   description: |
-    Enabled each instance of a shell to operate in its own isolated Kubernetes context
+    Enables each instance of a shell to operate in its own isolated Kubernetes context.
+    Supported shells: bash, zsh and fish.
   caveats: |
+    Requirements: bash, awk, sed, fzf and kubectl
+    
     To setup this plugin, please install the required shell-hook.
     For details see:
     kubectl shell-ctx -h
@@ -20,11 +23,11 @@ spec:
         values:
         - darwin
         - linux
-    uri: https://github.com/glemsom/shell-ctx/archive/refs/tags/v1.0.2.zip
-    sha256: 541977b3e4060e6a350aa1b62a2e6c2ff1085fd7fe86fd5d1f965759bc3bdbd3
+    uri: https://github.com/glemsom/shell-ctx/releases/download/v1.0.5/v1.0.5.zip
+    sha256: 83df76cf12b2c60d5265f60d8342e057df90f70659905371fe20e09657f33c68
     files:
-    - from: "shell-ctx-*/kubectl-shell_ctx"
+    - from: "shell-ctx*/kubectl-shell_ctx"
       to: "."
-    - from: "shell-ctx-*/LICENSE"
+    - from: "shell-ctx*/LICENSE"
       to: "."
     bin: kubectl-shell_ctx
