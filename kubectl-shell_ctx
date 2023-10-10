@@ -79,8 +79,7 @@ do_hook() {
 		echo "set -x KUBECTL_SHELL_CTX_HOOK $1"
 		echo "trap \"rm -f -- $TMP_KUBECONFIG\" EXIT"
 	else
-		echo "Unknown shell $1" >&2
-		exit 1
+		err "Unknown shell $1"
 	fi
 }
 
@@ -102,8 +101,7 @@ main() {
 		elif hash kubectl.exe 2>/dev/null; then
 			KUBECTL=kubectl.exe
 		else
-			echo "Error, kubectl is not found" >&2
-			exit 1
+			err "Error, kubectl is not found"
 		fi
 	fi
 
