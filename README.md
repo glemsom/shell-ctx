@@ -22,6 +22,9 @@ For this plugin to operate the following dependencies are required:
  - fzf
  - kubectl
 
+### Demo install
+![Install](shell-ctx-install.gif)
+
 ## Setup
 **The shell hooks needs to be loaded after your `KUBECONFIG` variable**  
 
