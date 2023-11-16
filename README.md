@@ -38,4 +38,5 @@ For FISH, append the following to your ~/.config/fish/config.fish somewhere afte
   `kubectl shell-ctx hook fish | source`
 
 ## Usage
-  `kubectl shell-ctx` Use search or arrow-keys to select context
+  `kubectl shell-ctx` Select context; Use arrow-keys or start typing to search  
+  `kubectl shell-ctx clone` Clone context; Use arrow-keys or start typing to search  
