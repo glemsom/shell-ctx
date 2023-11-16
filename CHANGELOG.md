@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.6
+ - Support empty KUBECONFIG variable
+
 ## v1.0.5
 - Add support for cloning context from another running shell
 - Minor cleanup for error-handling

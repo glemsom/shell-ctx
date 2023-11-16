@@ -1,6 +1,6 @@
 #!/bin/bash
 # Kubernetes shell independent context switching
-# Version: 1.0.5
+# Version: 1.0.6
 
 set -eou pipefail
 
