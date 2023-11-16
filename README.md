@@ -26,7 +26,7 @@ For this plugin to operate the following dependencies are required:
 ![Install](shell-ctx-install.gif)
 
 ## Setup
-**The shell hooks needs to be loaded after your `KUBECONFIG` variable**  
+**If you are setting a custom KUBECONFIG you need to load the shell hook AFTER your KUBECONFIG variable is set**
 
 For BASH, append the following to your ~/.bashrc somewhere after your `KUBECONFIG` variable  
   `eval "$(kubectl shell-ctx hook bash)"`
