@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.7
+ - Minor fix for cloning context
+
 ## v1.0.6
  - Support empty KUBECONFIG variable
 
