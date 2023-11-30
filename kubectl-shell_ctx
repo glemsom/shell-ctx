@@ -19,6 +19,7 @@ usage() {
 	cat <<-EOF
 	Usage:
 	  $SELF                       : Select new context
+	  $SELF -l                    : Select new context (Using long listing)
 	  $SELF clone                 : Clone context from another shell
 	  $SELF hook <SHELL>          : Hook for <SHELL>
 	  $SELF -h,--help             : Show this message
@@ -91,7 +92,7 @@ do_clone() {
 	[[ -z "$SHELL_CTXS" ]] && err "no other shell-ctx instances found"
 	for SHELL_CTX in $SHELL_CTXS; do
 		local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
-		TMP_CTX+="$SHELL_CTX    $TMP_CTX_CONTEXT\n"
+		TMP_CTX+="$SHELL_CTX	$TMP_CTX_CONTEXT\n"
 	done
 	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
 	cp -rp "$SELECTED_CTX" "$KUBECONFIG"
@@ -110,16 +111,20 @@ main() {
 
 	if [[ "$#" -eq 2 ]] && [[ "$1" == 'hook' ]]; then
 		do_hook "$2"
-	elif [[ "$#" -eq 0 ]]; then
+	elif [[ "$#" -eq 0 ]] || [[ "$#" -eq 1 && "${1-none}" == '-l' ]]; then
 		# Check we have the hook setup
 		if [[ -z "${KUBECTL_SHELL_CTX_HOOK:-}" ]]; then
 			do_help_hook
-	else
-		checkRequirements
-		SELECTED_CTX=$($KUBECTL config get-contexts --no-headers=true | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort | awk '{print $1'})
-		$KUBECTL config use-context $SELECTED_CTX
-	fi
-		elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
+		else
+			checkRequirements
+			if [[ "${1-none}" == "-l" ]]; then
+				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=false | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort --header-lines=1 | awk '{print $1'})"
+			else
+				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort)"
+			fi
+			$KUBECTL config use-context "$SELECTED_CTX"
+		fi
+	elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
 		checkRequirements
 		do_clone
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
