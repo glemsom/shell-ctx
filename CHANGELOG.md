@@ -1,7 +1,8 @@
 # Changelog
 ## v1.0.8
- - Default to sort listing (only list contexts)
- - Support -l for long listing
+ - Default to short listing with context preview
+ - Support option -l for legacy listing of contexts
+ - Support switching context from command-line
 
 ## v1.0.7
  - Minor fix for cloning context

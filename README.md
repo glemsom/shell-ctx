@@ -40,3 +40,4 @@ For FISH, append the following to your ~/.config/fish/config.fish somewhere afte
 ## Usage
   `kubectl shell-ctx` Select context; Use arrow-keys or start typing to search  
   `kubectl shell-ctx clone` Clone context; Use arrow-keys or start typing to search  
+  `kubectl shell-ctx <context>` Switch directly to context  
