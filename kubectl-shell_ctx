@@ -11,25 +11,25 @@ else
 fi
 
 err() {
-	echo "Error, $@" 1>&2
-	exit 1
+  echo "Error, $@" 1>&2
+  exit 1
 }
 
 usage() {
 	cat <<-EOF
 	Usage:
-  $SELF                       : Select new context
-  $SELF clone                 : Clone context from another shell
-  $SELF hook <SHELL>          : Hook for <SHELL>
-  $SELF -h,--help             : Show this message
+	  $SELF                       : Select new context
+	  $SELF clone                 : Clone context from another shell
+	  $SELF hook <SHELL>          : Hook for <SHELL>
+	  $SELF -h,--help             : Show this message
 
 	Setup:
-  $(do_help_hook)
+	  $(do_help_hook)
 	EOF
 }
 
 do_help_hook() {
-	cat <<-EOF
+  cat <<-EOF
 	Setup is required for $SELF to function correctly.
 
 	#################################################################################
@@ -38,21 +38,21 @@ do_help_hook() {
 	#  you need to do that BEFORE loading the shell hook!                           #
 	#################################################################################
 
-	BASH: append the following to your ~/.bashrc:
+	  BASH: append the following to your ~/.bashrc:
 
-	    eval "\$($SELF hook bash)"
-
-	
-	ZSH: append the following to your ~/.zshrc:
-
-	    eval "\$($SELF hook zsh)"
+		eval "\$($SELF hook bash)"
 
 
-	FISH: append the following to your ~/.config/fish/config.fish:
+	  ZSH: append the following to your ~/.zshrc:
 
-	    $SELF hook fish | source
+		eval "\$($SELF hook zsh)"
 
 
+	  FISH: append the following to your ~/.config/fish/config.fish:
+
+		$SELF hook fish | source
+
+  
 	EOF
 }
 
@@ -67,11 +67,11 @@ do_hook() {
 
 	# Write current context to new temp context
 	local NEW_KUBECONFIG_CONTENT=$($KUBECTL config view --raw)
-	
+
 	# Create new kubeconfig for this shell
-	echo "$NEW_KUBECONFIG_CONTENT" > "$TMP_KUBECONFIG"
+	echo "$NEW_KUBECONFIG_CONTENT" >"$TMP_KUBECONFIG"
 	chmod 600 "$TMP_KUBECONFIG"
-	
+
 	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
 		echo "export KUBECONFIG=$TMP_KUBECONFIG"
 		echo "export KUBECTL_SHELL_CTX_HOOK=$1"
@@ -90,11 +90,11 @@ do_clone() {
 	SHELL_CTXS=$(find /tmp/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)" 2>/dev/null || true)
 	[[ -z "$SHELL_CTXS" ]] && err "no other shell-ctx instances found"
 	for SHELL_CTX in $SHELL_CTXS; do
-    local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
+		local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
 		TMP_CTX+="$SHELL_CTX    $TMP_CTX_CONTEXT\n"
 	done
-  SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
-  cp -rp "$SELECTED_CTX" "$KUBECONFIG"
+	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
+	cp -rp "$SELECTED_CTX" "$KUBECONFIG"
 }
 
 main() {
@@ -114,13 +114,13 @@ main() {
 		# Check we have the hook setup
 		if [[ -z "${KUBECTL_SHELL_CTX_HOOK:-}" ]]; then
 			do_help_hook
-		else
-			checkRequirements
-			SELECTED_CTX=$($KUBECTL config get-contexts --no-headers=true | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort | awk '{print $1'})
-			$KUBECTL config use-context $SELECTED_CTX
-		fi
-	elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
-    checkRequirements
+	else
+		checkRequirements
+		SELECTED_CTX=$($KUBECTL config get-contexts --no-headers=true | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort | awk '{print $1'})
+		$KUBECTL config use-context $SELECTED_CTX
+	fi
+		elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
+		checkRequirements
 		do_clone
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
 		usage
