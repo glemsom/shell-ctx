@@ -129,6 +129,9 @@ main() {
 		do_clone
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
 		usage
+	elif [[ "$#" -eq 1 ]]; then
+		# Use context supplied on command line
+		$KUBECTL config use-context "$1"
 	else
 		echo "Error, unknown commandline arguments"
 		usage
