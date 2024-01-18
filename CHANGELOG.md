@@ -1,4 +1,7 @@
 # Changelog
+## v1.0.9
+	- Write kubeconfig asynchronous to optimize shell instantiation
+ 
 ## v1.0.8
  - Default to short listing with context preview
  - Support option -l for legacy listing of contexts
