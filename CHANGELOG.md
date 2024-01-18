@@ -1,4 +1,7 @@
 # Changelog
+## v1.0.10
+ - Update hook help to optimize instantiation performance
+
 ## v1.0.9
  - Write kubeconfig asynchronous to optimize shell instantiation
  

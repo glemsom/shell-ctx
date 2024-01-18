@@ -1,6 +1,6 @@
 #!/bin/bash
 # Kubernetes shell independent context switching
-# Version: 1.0.9
+# Version: 1.0.10
 
 set -eou pipefail
 
@@ -41,17 +41,17 @@ do_help_hook() {
 
 	  BASH: append the following to your ~/.bashrc:
 
-		eval "\$($SELF hook bash)"
+		eval "\$($(basename "$0") hook bash)"
 
 
 	  ZSH: append the following to your ~/.zshrc:
 
-		eval "\$($SELF hook zsh)"
+		eval "\$($(basename "$0") hook zsh)"
 
 
 	  FISH: append the following to your ~/.config/fish/config.fish:
 
-		$SELF hook fish | source
+		$(basename "$0") hook fish | source
 
   
 	EOF

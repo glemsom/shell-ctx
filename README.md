@@ -29,13 +29,13 @@ For this plugin to operate the following dependencies are required:
 **If you are setting a custom KUBECONFIG you need to load the shell hook AFTER your KUBECONFIG variable is set**
 
 For BASH, append the following to your ~/.bashrc somewhere after your `KUBECONFIG` variable  
-  `eval "$(kubectl shell-ctx hook bash)"`
+  `eval "$(kubectl-shell_ctx hook bash)"`
 
 For ZSH, append the following to your ~/.zshrc somewhere after your `KUBECONFIG` variable    
-  `eval "$(kubectl shell-ctx hook zsh)"`
+  `eval "$(kubectl-shell_ctx hook zsh)"`
 
 For FISH, append the following to your ~/.config/fish/config.fish somewhere after your `KUBECONFIG` variable    
-  `kubectl shell-ctx hook fish | source`
+  `kubectl-shell_ctx hook fish | source`
 
 ## Usage
   `kubectl shell-ctx` Select context; Use arrow-keys or start typing to search  
