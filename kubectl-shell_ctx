@@ -63,15 +63,9 @@ do_hook() {
 	if [ -z ${KUBECONFIG+x} ]; then
 		KUBECONFIG=""
 	fi
+
 	local ORIG_KUBECONFIG="$KUBECONFIG"
 	local TMP_KUBECONFIG=$(mktemp -q /tmp/kubectl-shell-ctx.XXXXXX || exit 1)
-
-	# Write current context to new temp context
-	local NEW_KUBECONFIG_CONTENT=$($KUBECTL config view --raw)
-
-	# Create new kubeconfig for this shell
-	echo "$NEW_KUBECONFIG_CONTENT" >"$TMP_KUBECONFIG"
-	chmod 600 "$TMP_KUBECONFIG"
 
 	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
 		echo "export KUBECONFIG=$TMP_KUBECONFIG"
@@ -84,6 +78,16 @@ do_hook() {
 	else
 		err "Unknown shell $1"
 	fi
+
+	# Write current context to new temp context
+	( 
+		local NEW_KUBECONFIG_CONTENT=$($KUBECTL config view --raw)
+
+		# Create new kubeconfig for this shell
+		echo "$NEW_KUBECONFIG_CONTENT" >"$TMP_KUBECONFIG"
+		chmod 600 "$TMP_KUBECONFIG" 
+	) &
+
 }
 
 do_clone() {
