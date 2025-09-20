@@ -64,8 +64,12 @@ do_hook() {
 		KUBECONFIG=""
 	fi
 
+  if [ -z ${KUBECTL_SHELL_CTX_DIR+x} ]; then
+    KUBECTL_SHELL_CTX_DIR="/tmp"
+  fi
+
 	local ORIG_KUBECONFIG="$KUBECONFIG"
-	local TMP_KUBECONFIG=$(mktemp -q /tmp/kubectl-shell-ctx.XXXXXX || exit 1)
+	local TMP_KUBECONFIG=$(mktemp -q ${KUBECTL_SHELL_CTX_DIR}/kubectl-shell-ctx.XXXXXX || exit 1)
 
 	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
 		echo "export KUBECONFIG=$TMP_KUBECONFIG"
@@ -91,8 +95,12 @@ do_hook() {
 }
 
 do_clone() {
+  if [ -z ${KUBECTL_SHELL_CTX_DIR+x} ]; then
+    KUBECTL_SHELL_CTX_DIR="/tmp"
+  fi
+
 	# Find other shell-ctx instances
-	SHELL_CTXS=$(find /tmp/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)" 2>/dev/null || true)
+	SHELL_CTXS=$(find ${KUBECTL_SHELL_CTX_DIR}/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)" 2>/dev/null || true)
 	[[ -z "$SHELL_CTXS" ]] && err "no other shell-ctx instances found"
 	for SHELL_CTX in $SHELL_CTXS; do
 		local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
