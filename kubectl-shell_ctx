@@ -64,9 +64,9 @@ do_hook() {
 		KUBECONFIG=""
 	fi
 
-  if [ -z ${KUBECTL_SHELL_CTX_DIR+x} ]; then
-    KUBECTL_SHELL_CTX_DIR="/tmp"
-  fi
+	if [ -z ${KUBECTL_SHELL_CTX_DIR+x} ]; then
+		KUBECTL_SHELL_CTX_DIR="/tmp"
+	fi
 
 	local ORIG_KUBECONFIG="$KUBECONFIG"
 	local TMP_KUBECONFIG=$(mktemp -q ${KUBECTL_SHELL_CTX_DIR}/kubectl-shell-ctx.XXXXXX || exit 1)
@@ -95,9 +95,9 @@ do_hook() {
 }
 
 do_clone() {
-  if [ -z ${KUBECTL_SHELL_CTX_DIR+x} ]; then
-    KUBECTL_SHELL_CTX_DIR="/tmp"
-  fi
+	if [ -z ${KUBECTL_SHELL_CTX_DIR+x} ]; then
+		KUBECTL_SHELL_CTX_DIR="/tmp"
+	fi
 
 	# Find other shell-ctx instances
 	SHELL_CTXS=$(find ${KUBECTL_SHELL_CTX_DIR}/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)" 2>/dev/null || true)
