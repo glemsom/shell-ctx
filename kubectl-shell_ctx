@@ -108,7 +108,7 @@ do_clone() {
 		TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context || echo "No current context")
 		TMP_CTX+="$SHELL_CTX	$TMP_CTX_CONTEXT\n"
 	done
-	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
+	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --no-sort --border=top --border-label='Select context to clone' --style=full --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' | awk '{print $1}')
 	cp -rp "$SELECTED_CTX" "$KUBECONFIG"
 }
 
@@ -132,9 +132,14 @@ main() {
 		else
 			checkRequirements
 			if [[ "${1-none}" == "-l" ]]; then
-				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=false | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort --header-lines=1 | awk '{print $1}')"
+				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=false | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' --style=full --header-lines=1 --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' | awk '{print $1}')"
 			else
-				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort --preview="$KUBECTL --context {} config view --minify")"
+				if command -v yq &>/dev/null; then
+					PREVIEW_CMD="$KUBECTL --context {} config view --minify | yq -C"
+				else
+					PREVIEW_CMD="$KUBECTL --context {} config view --minify"
+				fi
+				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' --style=full --preview="$PREVIEW_CMD" --preview-window=right,60%,border-rounded,wrap --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ')"
 			fi
 			$KUBECTL config use-context "$SELECTED_CTX"
 		fi
