@@ -68,7 +68,6 @@ do_hook() {
 		KUBECTL_SHELL_CTX_DIR="/tmp"
 	fi
 
-	local ORIG_KUBECONFIG="$KUBECONFIG"
 	local TMP_KUBECONFIG=$(mktemp -q ${KUBECTL_SHELL_CTX_DIR}/kubectl-shell-ctx.XXXXXX || exit 1)
 
 	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
