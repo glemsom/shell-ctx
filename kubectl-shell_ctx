@@ -105,7 +105,7 @@ do_clone() {
 	[[ -z "$SHELL_CTXS" ]] && err "no other shell-ctx instances found"
 	for SHELL_CTX in $SHELL_CTXS; do
 		local TMP_CTX_CONTEXT
-		TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
+		TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context || echo "No current context")
 		TMP_CTX+="$SHELL_CTX	$TMP_CTX_CONTEXT\n"
 	done
 	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
