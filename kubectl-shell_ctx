@@ -132,7 +132,7 @@ main() {
 		else
 			checkRequirements
 			if [[ "${1-none}" == "-l" ]]; then
-				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=false | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort --header-lines=1 | awk '{print $1'})"
+				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=false | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort --header-lines=1 | awk '{print $1}')"
 			else
 				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --header="Select context" --no-sort --preview="$KUBECTL --context {} config view --minify")"
 			fi
