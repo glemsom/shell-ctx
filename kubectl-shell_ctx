@@ -11,7 +11,7 @@ else
 fi
 
 err() {
-  echo "Error, $@" 1>&2
+  echo "Error, $*" 1>&2
   exit 1
 }
 
@@ -161,4 +161,4 @@ checkRequirements() {
 	done
 }
 
-main $@
+main "$@"
