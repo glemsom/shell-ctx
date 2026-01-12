@@ -68,7 +68,8 @@ do_hook() {
 		KUBECTL_SHELL_CTX_DIR="/tmp"
 	fi
 
-	local TMP_KUBECONFIG=$(mktemp -q ${KUBECTL_SHELL_CTX_DIR}/kubectl-shell-ctx.XXXXXX || exit 1)
+	local TMP_KUBECONFIG
+	TMP_KUBECONFIG=$(mktemp -q "${KUBECTL_SHELL_CTX_DIR}"/kubectl-shell-ctx.XXXXXX || exit 1)
 
 	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
 		echo "export KUBECONFIG=$TMP_KUBECONFIG"
@@ -84,7 +85,8 @@ do_hook() {
 
 	# Write current context to new temp context
 	( 
-		local NEW_KUBECONFIG_CONTENT=$($KUBECTL config view --raw)
+		local NEW_KUBECONFIG_CONTENT
+		NEW_KUBECONFIG_CONTENT=$($KUBECTL config view --raw)
 
 		# Create new kubeconfig for this shell
 		echo "$NEW_KUBECONFIG_CONTENT" >"$TMP_KUBECONFIG"
@@ -99,10 +101,11 @@ do_clone() {
 	fi
 
 	# Find other shell-ctx instances
-	SHELL_CTXS=$(find ${KUBECTL_SHELL_CTX_DIR}/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename $KUBECONFIG)" 2>/dev/null || true)
+	SHELL_CTXS=$(find "${KUBECTL_SHELL_CTX_DIR}"/ -type f -name "kubectl-shell-ctx*" -not -name "$(basename "$KUBECONFIG")" 2>/dev/null || true)
 	[[ -z "$SHELL_CTXS" ]] && err "no other shell-ctx instances found"
 	for SHELL_CTX in $SHELL_CTXS; do
-		local TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
+		local TMP_CTX_CONTEXT
+		TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context)
 		TMP_CTX+="$SHELL_CTX	$TMP_CTX_CONTEXT\n"
 	done
 	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --header="Select context to clone" --no-sort | awk '{print $1}')
@@ -154,7 +157,7 @@ checkRequirements() {
 	# Test for requirements
 	REQUIREMENTS="mktemp awk sed fzf kubectl"
 	for REQUIREMENT in $REQUIREMENTS; do
-		command -v $REQUIREMENT 1>/dev/null || {
+		command -v "$REQUIREMENT" 1>/dev/null || {
 			err "requirement missing: $REQUIREMENT"
 		}
 	done
