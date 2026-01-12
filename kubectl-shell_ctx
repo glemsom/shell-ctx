@@ -19,7 +19,6 @@ usage() {
 	cat <<-EOF
 	Usage:
 	  $SELF                       : Select new context
-	  $SELF -l                    : Select new context (Using long listing)
 	  $SELF clone                 : Clone context from another shell
 	  $SELF hook <SHELL>          : Hook for <SHELL>
 	  $SELF -h,--help             : Show this message
@@ -125,22 +124,18 @@ main() {
 
 	if [[ "$#" -eq 2 ]] && [[ "$1" == 'hook' ]]; then
 		do_hook "$2"
-	elif [[ "$#" -eq 0 ]] || [[ "$#" -eq 1 && "${1-none}" == '-l' ]]; then
+	elif [[ "$#" -eq 0 ]]; then
 		# Check we have the hook setup
 		if [[ -z "${KUBECTL_SHELL_CTX_HOOK:-}" ]]; then
 			do_help_hook
 		else
 			checkRequirements
-			if [[ "${1-none}" == "-l" ]]; then
-				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=false | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' --style=full --header-lines=1 --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' | awk '{print $1}')"
+			if command -v yq &>/dev/null; then
+				PREVIEW_CMD="$KUBECTL --context {} config view --minify | yq -C"
 			else
-				if command -v yq &>/dev/null; then
-					PREVIEW_CMD="$KUBECTL --context {} config view --minify | yq -C"
-				else
-					PREVIEW_CMD="$KUBECTL --context {} config view --minify"
-				fi
-				SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' --style=full --preview="$PREVIEW_CMD" --preview-window=right,60%,border-rounded,wrap --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ')"
+				PREVIEW_CMD="$KUBECTL --context {} config view --minify"
 			fi
+			SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' --style=full --preview="$PREVIEW_CMD" --preview-window=right,60%,border-rounded,wrap --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ')"
 			$KUBECTL config use-context "$SELECTED_CTX"
 		fi
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
