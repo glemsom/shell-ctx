@@ -1,4 +1,10 @@
 # Changelog
+## v1.0.13
+ - Enhance fzf UI with borders, preview window improvements, and reverse layout
+ - Add yq color support for YAML preview when available
+ - Remove long listing (-l) option
+ - Improve visual consistency with colored labels and prompts
+
 ## v1.0.12
  - Fix quoting bug
  - Catch "no context" error for clone command
