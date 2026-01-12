@@ -1,4 +1,12 @@
 # Changelog
+## v1.0.12
+ - Fix quoting bug
+ - Catch "no context" error for clone command
+ - Address shellcheck warnings (SC2068, SC2034, SC2155)
+
+## v1.0.11
+ - Allow user-configurable directory for KUBECONFIG via KUBECTL_SHELL_CTX_DIR
+
 ## v1.0.10
  - Update hook help to optimize instantiation performance
 
