@@ -1,6 +1,6 @@
 #!/bin/bash
 # Kubernetes shell independent context switching
-# Version: 1.0.13
+# Version: 1.0.14
 
 set -eou pipefail
 
@@ -107,7 +107,7 @@ do_clone() {
 		TMP_CTX_CONTEXT=$(KUBECONFIG=$SHELL_CTX $KUBECTL config current-context || echo "No current context")
 		TMP_CTX+="$SHELL_CTX	$TMP_CTX_CONTEXT\n"
 	done
-	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --no-sort --border=top --border-label='Select context to clone' --style=full --layout=reverse --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' --color='label:cyan,prompt:cyan' | awk '{print $1}')
+	SELECTED_CTX=$(echo -e "$TMP_CTX" | fzf -e --no-sort --border=top --border-label='Select context to clone' $FZF_STYLE_ARG --layout=reverse --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' --color='label:cyan,prompt:cyan' | awk '{print $1}')
 	cp -rp "$SELECTED_CTX" "$KUBECONFIG"
 }
 
@@ -135,7 +135,7 @@ main() {
 			else
 				PREVIEW_CMD="$KUBECTL --context {} config view --minify"
 			fi
-			SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' --style=full --layout=reverse --preview="$PREVIEW_CMD" --preview-window=right,60%,border-rounded,wrap --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' --color='label:cyan,prompt:cyan')"
+			SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' $FZF_STYLE_ARG --layout=reverse --preview="$PREVIEW_CMD" --preview-window=right,60%,border-rounded,wrap --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' --color='label:cyan,prompt:cyan')"
 			$KUBECTL config use-context "$SELECTED_CTX"
 		fi
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
@@ -161,6 +161,24 @@ checkRequirements() {
 			err "requirement missing: $REQUIREMENT"
 		}
 	done
+	# Check fzf version (--style=full requires 0.58+)
+	checkFzfVersion
+}
+
+checkFzfVersion() {
+	local FZF_VERSION
+	FZF_VERSION=$(fzf --version | awk '{print $1}' | cut -d. -f1-2)
+	local MAJOR
+	local MINOR
+	MAJOR=$(echo "$FZF_VERSION" | cut -d. -f1)
+	MINOR=$(echo "$FZF_VERSION" | cut -d. -f2)
+	
+	# --style=full requires fzf 0.58+
+	if [[ $MAJOR -eq 0 ]] && [[ $MINOR -lt 58 ]]; then
+		FZF_STYLE_ARG=""
+	else
+		FZF_STYLE_ARG="--style=full"
+	fi
 }
 
 main "$@"

@@ -1,4 +1,8 @@
 # Changelog
+## v1.0.14
+ - Add fzf version detection to support both old and new versions
+    - Conditionally use --style=full flag only for fzf 0.58+
+
 ## v1.0.13
  - Enhance fzf UI with borders, preview window improvements, and reverse layout
  - Add yq color support for YAML preview when available
