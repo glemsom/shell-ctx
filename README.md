@@ -26,16 +26,66 @@ For this plugin to operate the following dependencies are required:
 ![Install](shell-ctx-install.gif)
 
 ## Setup
-**If you are setting a custom KUBECONFIG you need to load the shell hook AFTER your KUBECONFIG variable is set**
+Set a custom `KUBECONFIG`, if you use one, before loading the shell-ctx hook.
 
-For BASH, append the following to your ~/.bashrc somewhere after your `KUBECONFIG` variable  
-  `eval "$(kubectl-shell_ctx hook bash)"`
+### Bash
+Bash plugin-argument completion requires Bash 4+ and an existing upstream
+`kubectl` completion registration. Normal shell-ctx operation has no new Bash
+version requirement. shell-ctx does not install or source kubectl completion
+for you.
 
-For ZSH, append the following to your ~/.zshrc somewhere after your `KUBECONFIG` variable    
-  `eval "$(kubectl-shell_ctx hook zsh)"`
+Add the following to `~/.bashrc` in this order (using your usual upstream
+kubectl-completion setup):
 
-For FISH, append the following to your ~/.config/fish/config.fish somewhere after your `KUBECONFIG` variable    
-  `kubectl-shell_ctx hook fish | source`
+```sh
+export KUBECONFIG=/path/to/config       # optional
+source <(kubectl completion bash)       # load upstream kubectl completion
+# Declare supported aliases here; see "Aliases" below.
+eval "$(kubectl-shell_ctx hook bash)"
+```
+
+### Zsh
+Zsh plugin-argument completion requires upstream `kubectl` completion to be
+loaded first. Initialize completion before the hook; shell-ctx does not invoke
+`compinit` or otherwise configure upstream kubectl completion.
+
+Add the following to `~/.zshrc` in this order (using your usual upstream
+kubectl-completion setup):
+
+```sh
+export KUBECONFIG=/path/to/config       # optional
+autoload -Uz compinit
+compinit
+source <(kubectl completion zsh)        # load upstream kubectl completion
+# Declare supported aliases here; see "Aliases" below.
+eval "$(kubectl-shell_ctx hook zsh)"
+```
+
+### Fish
+The Fish hook installs completion for `kubectl shell-ctx` directly. It does not
+require upstream Fish kubectl completion, and coexists with it when present.
+Add the following to `~/.config/fish/config.fish` after any custom
+`KUBECONFIG` setting:
+
+```fish
+set -x KUBECONFIG /path/to/config       # optional
+kubectl completion fish | source        # optional upstream completion
+kubectl-shell_ctx hook fish | source
+```
+
+### Aliases
+Automatic alias completion is supported only in Bash and Zsh. Declare the
+alias before evaluating the shell-ctx hook, and make it expand exactly to
+`kubectl shell-ctx` (whitespace variation is allowed):
+
+```sh
+alias kctx='kubectl shell-ctx'
+eval "$(kubectl-shell_ctx hook bash)"
+```
+
+Aliases with added flags, wrappers, or chained commands are not supported, nor
+are aliases declared after the hook or aliases to `kubectl-shell_ctx`. Fish
+alias functions and aliases are not discovered automatically.
 
 ## Usage
   `kubectl shell-ctx` Select context; Use arrow-keys or start typing to search  

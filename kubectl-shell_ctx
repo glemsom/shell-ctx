@@ -1,6 +1,6 @@
 #!/bin/bash
 # Kubernetes shell independent context switching
-# Version: 1.0.14
+# Version: 1.1.0
 
 set -eou pipefail
 
@@ -71,16 +71,120 @@ do_hook() {
 	TMP_KUBECONFIG=$(mktemp -q "${KUBECTL_SHELL_CTX_DIR}"/kubectl-shell-ctx.XXXXXX || exit 1)
 
 	if [[ "$1" == "bash" ]] || [[ "$1" == "zsh" ]]; then
-		echo "export KUBECONFIG=$TMP_KUBECONFIG"
-		echo "export KUBECTL_SHELL_CTX_HOOK=$1"
-		echo "trap \"rm -f -- $TMP_KUBECONFIG\" EXIT"
+		printf 'export KUBECONFIG=%q\n' "$TMP_KUBECONFIG"
+		printf 'export KUBECTL_SHELL_CTX_HOOK=%q\n' "$1"
+		printf 'export KUBECTL_SHELL_CTX_COMPLETER=%q\n' "$0"
+		printf 'trap %q EXIT\n' "rm -f -- $TMP_KUBECONFIG"
 	elif [[ "$1" == "fish" ]]; then
-		echo "set -x KUBECONFIG $TMP_KUBECONFIG"
-		echo "set -x KUBECTL_SHELL_CTX_HOOK $1"
-		echo "trap \"rm -f -- $TMP_KUBECONFIG\" EXIT"
+		printf 'set -x KUBECONFIG %s\n' "$TMP_KUBECONFIG"
+		printf 'set -x KUBECTL_SHELL_CTX_HOOK %s\n' "$1"
+		printf 'set -x KUBECTL_SHELL_CTX_COMPLETER %s\n' "$0"
+		printf 'trap %s EXIT\n' "\"rm -f -- $TMP_KUBECONFIG\""
 	else
 		err "Unknown shell $1"
 	fi
+
+	case "$1" in
+	bash)
+		cat <<'EOF'
+# shell-ctx Bash completion; requires an existing Bash 4+ kubectl completer.
+if (( BASH_VERSINFO[0] >= 4 )) && complete -p kubectl &>/dev/null && [[ -z ${__shell_ctx_bash_installed+x} ]]; then
+	__shell_ctx_bash_installed=1
+	__shell_ctx_bash_registration=$(complete -p kubectl)
+	if [[ $__shell_ctx_bash_registration =~ -F[[:space:]]+([^[:space:]]+) ]]; then
+		__shell_ctx_bash_delegate=${BASH_REMATCH[1]}
+		__shell_ctx_bash_candidates() {
+			local candidate cur=$1; shift
+			compopt -o filenames
+			COMPREPLY=()
+			while IFS= read -r candidate; do [[ $candidate == "$cur"* ]] && COMPREPLY+=("$candidate"); done < <("$KUBECTL_SHELL_CTX_COMPLETER" __complete candidates "$@")
+		}
+		__shell_ctx_bash_complete() {
+			local cur=${COMP_WORDS[COMP_CWORD]}
+			if [[ ${COMP_WORDS[1]:-} == shell-ctx ]]; then
+				__shell_ctx_bash_candidates "$cur" "${COMP_WORDS[@]:2:COMP_CWORD-2}"
+			else
+				"$__shell_ctx_bash_delegate"
+			fi
+		}
+		eval "${__shell_ctx_bash_registration/-F $__shell_ctx_bash_delegate/-F __shell_ctx_bash_complete}"
+	fi
+fi
+if (( BASH_VERSINFO[0] >= 4 )); then
+	declare -gA __shell_ctx_bash_alias_managed __shell_ctx_bash_alias_warned 2>/dev/null || true
+	while IFS=' ' read -r __shell_ctx_alias __shell_ctx_value; do
+		[[ $__shell_ctx_value =~ ^kubectl[[:space:]]+shell-ctx$ ]] || continue
+		if complete -p "$__shell_ctx_alias" &>/dev/null; then
+			if [[ -z ${__shell_ctx_bash_alias_managed[$__shell_ctx_alias]+x} && -z ${__shell_ctx_bash_alias_warned[$__shell_ctx_alias]+x} ]]; then
+				__shell_ctx_bash_alias_warned[$__shell_ctx_alias]=1
+				printf "shell-ctx: leaving existing completion for alias '%s' unchanged\n" "$__shell_ctx_alias" >&2
+			fi
+		else
+			__shell_ctx_bash_alias_complete() { __shell_ctx_bash_candidates "${COMP_WORDS[COMP_CWORD]}" "${COMP_WORDS[@]:1:COMP_CWORD-1}"; }
+			complete -o bashdefault -o default -F __shell_ctx_bash_alias_complete "$__shell_ctx_alias"
+			__shell_ctx_bash_alias_managed[$__shell_ctx_alias]=1
+		fi
+	done < <(alias -p | sed -n "s/^alias \([^=]*\)='\(.*\)'$/\1 \2/p")
+fi
+EOF
+		;;
+	zsh)
+		cat <<'EOF'
+# shell-ctx Zsh completion; requires a pre-existing compinit binding for kubectl.
+if (( ${+_comps[kubectl]} )) && [[ -z ${__shell_ctx_zsh_installed+x} ]]; then
+	__shell_ctx_zsh_installed=1
+	__shell_ctx_zsh_delegate=$_comps[kubectl]
+	__shell_ctx_zsh_candidates() {
+		local -a candidates args
+		args=("${words[3,$(( CURRENT - 1 ))]}")
+		candidates=("${(@f)$("$KUBECTL_SHELL_CTX_COMPLETER" __complete candidates "${args[@]}")}")
+		compadd -- "${candidates[@]}"
+	}
+	__shell_ctx_zsh_complete() {
+		if [[ $words[2] == shell-ctx ]]; then
+			__shell_ctx_zsh_candidates
+		else
+			"$__shell_ctx_zsh_delegate"
+		fi
+	}
+	compdef __shell_ctx_zsh_complete kubectl
+fi
+typeset -gA __shell_ctx_zsh_alias_managed __shell_ctx_zsh_alias_warned
+for __shell_ctx_alias __shell_ctx_value in ${(kv)aliases}; do
+	[[ $__shell_ctx_value =~ '^kubectl[[:space:]]+shell-ctx$' ]] || continue
+	if (( ${+_comps[$__shell_ctx_alias]} )); then
+		if [[ -z ${__shell_ctx_zsh_alias_managed[$__shell_ctx_alias]+x} && -z ${__shell_ctx_zsh_alias_warned[$__shell_ctx_alias]+x} ]]; then
+			__shell_ctx_zsh_alias_warned[$__shell_ctx_alias]=1
+			print -u2 -r -- "shell-ctx: leaving existing completion for alias '$__shell_ctx_alias' unchanged"
+		fi
+	else
+		__shell_ctx_zsh_alias_complete() {
+			local -a candidates args
+			args=("${words[2,$(( CURRENT - 1 ))]}")
+			candidates=("${(@f)$("$KUBECTL_SHELL_CTX_COMPLETER" __complete candidates "${args[@]}")}")
+			compadd -- "${candidates[@]}"
+		}
+		compdef __shell_ctx_zsh_alias_complete "$__shell_ctx_alias"
+		__shell_ctx_zsh_alias_managed[$__shell_ctx_alias]=1
+	fi
+done
+EOF
+		;;
+	fish)
+		cat <<'EOF'
+function __shell_ctx_fish_path
+    set -l words (commandline -opc)
+    test (count $words) -ge 2; and test "$words[1]" = kubectl; and test "$words[2]" = shell-ctx
+end
+function __shell_ctx_fish_candidates
+    set -l words (commandline -opc)
+    set -e words[1..2]
+    "$KUBECTL_SHELL_CTX_COMPLETER" __complete candidates $words
+end
+complete -c kubectl -n __shell_ctx_fish_path -f -a '(__shell_ctx_fish_candidates)'
+EOF
+		;;
+	esac
 
 	# Write current context to new temp context
 	( 
@@ -92,6 +196,20 @@ do_hook() {
 		chmod 600 "$TMP_KUBECONFIG" 
 	) &
 
+}
+
+completion_candidates() {
+	if [[ "$#" -eq 0 ]]; then
+		printf '%s\n' clone hook -h --help
+		while IFS= read -r context; do
+			case "$context" in
+				clone|-h|--help) ;;
+				*) printf '%s\n' "$context" ;;
+			esac
+		done < <("$KUBECTL" config get-contexts --no-headers -o name 2>/dev/null)
+	elif [[ "$#" -eq 1 ]] && [[ "$1" == "hook" ]]; then
+		printf '%s\n' bash zsh fish
+	fi
 }
 
 do_clone() {
@@ -122,7 +240,9 @@ main() {
 		fi
 	fi
 
-	if [[ "$#" -eq 2 ]] && [[ "$1" == 'hook' ]]; then
+	if [[ "$#" -ge 2 ]] && [[ "$1" == '__complete' ]] && [[ "$2" == 'candidates' ]]; then
+		completion_candidates "${@:3}"
+	elif [[ "$#" -eq 2 ]] && [[ "$1" == 'hook' ]]; then
 		do_hook "$2"
 	elif [[ "$#" -eq 0 ]]; then
 		# Check we have the hook setup
@@ -136,7 +256,7 @@ main() {
 				PREVIEW_CMD="$KUBECTL --context {} config view --minify"
 			fi
 			SELECTED_CTX="$($KUBECTL config get-contexts --no-headers=true -o name | sed 's/^\*/ /g' | fzf -e --no-sort --border=top --border-label='Select context' $FZF_STYLE_ARG --layout=reverse --preview="$PREVIEW_CMD" --preview-window=right,60%,border-rounded,wrap --pointer='▶' --marker='✓' --info=inline --cycle --height=~80% --prompt='Search: ' --color='label:cyan,prompt:cyan')"
-			$KUBECTL config use-context "$SELECTED_CTX"
+			$KUBECTL config use-context -- "$SELECTED_CTX"
 		fi
 	elif [[ "$#" -eq 1 ]] && [[ "$1" == "clone" ]]; then
 		checkRequirements
@@ -145,7 +265,7 @@ main() {
 		usage
 	elif [[ "$#" -eq 1 ]]; then
 		# Use context supplied on command line
-		$KUBECTL config use-context "$1"
+		$KUBECTL config use-context -- "$1"
 	else
 		echo "Error, unknown commandline arguments"
 		usage

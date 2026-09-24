@@ -1,4 +1,10 @@
 # Changelog
+## v1.1.0
+ - Add native Bash, Zsh, and Fish completion for `kubectl shell-ctx`
+ - Require Bash and Zsh to load upstream `kubectl` completion before the shell-ctx hook
+ - Require Bash 4+ for Bash completion only; normal shell-ctx operation is unchanged
+ - Add automatic completion for Bash/Zsh aliases that expand exactly to `kubectl shell-ctx`
+
 ## v1.0.14
  - Add fzf version detection to support both old and new versions
     - Conditionally use --style=full flag only for fzf 0.58+
